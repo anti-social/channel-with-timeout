@@ -1,6 +1,6 @@
 # channel-with-timeout
 
-Project for testing kotlin channels
+Project to test kotlin channels
 
 ```
 ./gradlew jcstress
