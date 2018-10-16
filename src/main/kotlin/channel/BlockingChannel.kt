@@ -4,6 +4,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.selects.select
 
 class BlockingChannel(capacity: Int) : AutoCloseable {
     companion object {
@@ -13,22 +14,23 @@ class BlockingChannel(capacity: Int) : AutoCloseable {
     private val channel = Channel<Unit>(capacity = capacity)
 
     fun send() = runBlocking {
-        // delay(DELAY_MS)
+//        delay(DELAY_MS)
         channel.send(Unit)
     }
 
     fun receive(): Boolean = runBlocking {
-        val msg = withTimeoutOrNull(10_000) {
-            // This works fine
-            // channel.receive()
-
-            var msg: Unit?
+        var msg: Unit? = null
+        withTimeoutOrNull(10_000) {
             do {
-                msg = withTimeoutOrNull(DELAY_MS) {
-                    channel.receive()
+                select<Unit> {
+                    channel.onReceive {
+                        msg = it
+                    }
+                    onTimeout(DELAY_MS) {
+                        msg = null
+                    }
                 }
             } while (msg == null)
-            msg
         }
         msg != null
     }
